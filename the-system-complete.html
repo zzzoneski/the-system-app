@@ -859,19 +859,65 @@
     }
 
     function completeObjective(questId, objectiveId) {
-      showModal(`
-        <div class="modal-title">Congratulations! 🎉</div>
-        <div style="text-align: center; margin: 20px 0; font-size: 14px;">
-          You completed today's objective!
-          <br><br>
-          <strong>Rewards:</strong><br>
-          ${quests.find(q => q.id === questId)?.rewards?.[0] ? '◆ ' + quests.find(q => q.id === questId).rewards[0] : 'Keep pushing!'}
-        </div>
-        <div class="confirm-buttons">
-          <button class="confirm-btn confirm-yes" onclick="closeModal(); switchQuestTab('daily')">Continue</button>
-        </div>
-      `);
-    }
+  closeModal();
+  showRewardsModal(questId);
+}
+
+function showRewardsModal(questId) {
+  const quest = quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  showModal(`
+    <div class="modal-title">Weekly Rewards</div>
+    <div style="font-size: 13px; color: var(--primary); margin-bottom: 16px; text-transform: uppercase; font-family: 'Orbitron', sans-serif; font-weight: 700;">Insert desired rewards for the next 7 days of questing:</div>
+    
+    <textarea id="rewardsInput" class="input-field" placeholder="e.g., New gaming gear, Movie night, Rest day, Ice cream..." style="min-height: 100px;"></textarea>
+    
+    <div class="confirm-buttons" style="margin-top: 24px;">
+      <button class="confirm-btn confirm-yes" onclick="saveRewards('${questId}')" style="background: var(--success); color: var(--background);">SAVE REWARDS</button>
+      <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning); color: var(--text);">SKIP</button>
+    </div>
+  `);
+}
+
+function saveRewards(questId) {
+  const rewardsInput = document.getElementById('rewardsInput').value;
+  if (!rewardsInput.trim()) {
+    alert('Please enter at least one reward');
+    return;
+  }
+
+  const quest = quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  const weekNumber = Math.floor(quest.currentWeek || 0);
+  if (!quest.rewards) quest.rewards = {};
+  
+  quest.rewards[`week_${weekNumber}`] = rewardsInput;
+  localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+  
+  closeModal();
+  showModal(`
+    <div class="modal-title">Congratulations! 🎉</div>
+    <div style="text-align: center; margin: 20px 0; font-size: 14px;">
+      Week ${weekNumber + 1} rewards saved!<br><br>
+      Keep pushing toward your quest!
+    </div>
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="closeModal(); switchQuestTab('daily')" style="background: var(--success); color: var(--background);">Continue</button>
+    </div>
+  `);
+}
+
+function checkForRewardsPrompt(questId) {
+  const quest = quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  const lastRewardWeek = Object.keys(quest.rewards || {}).length;
+  if (lastRewardWeek === 0) {
+    setTimeout(() => showRewardsModal(questId), 500);
+  }
+}
 
     function withdrawQuest(questId, event) {
       event.stopPropagation();
