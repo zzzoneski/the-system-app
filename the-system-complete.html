@@ -840,15 +840,22 @@
     }
 
     function completeObjective(questId, objectiveId) {
-      showModal(`
-        <div class="modal-title">Congratulations! 🎉</div>
-        <div style="text-align: center; margin: 20px 0; font-size: 14px;">
-          You completed today's objective!
-        </div>
-        <div class="confirm-buttons">
-          <button class="confirm-btn confirm-yes" onclick="closeModal(); switchQuestTab('daily')" style="background: var(--success); color: var(--background);">Continue</button>
-        </div>
-      `);
+  const quest = quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  quest.lastDailyCompleted = new Date().toISOString();
+  localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+
+  showModal(`
+    <div class="modal-title">Congratulations! 🎉</div>
+    <div style="text-align: center; margin: 20px 0; font-size: 14px;">
+      You completed today's objective!
+    </div>
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="closeModal(); renderQuestTabContent('daily')" style="background: var(--success); color: var(--background);">Continue</button>
+    </div>
+  `);
+}
     }
 
     function withdrawQuest(questId, event) {
@@ -1073,12 +1080,122 @@
     }
 
     function editHabit(questId, habitId) {
-      alert('Edit functionality coming soon');
-    }
+  const quest = quests.find(q => q.id === questId);
+  const habit = quest.habits.find(h => h.id === habitId);
+  if (!habit) return;
 
-    function editSkill(questId, skillId) {
-      alert('Edit functionality coming soon');
-    }
+  showModal(`
+    <div class="modal-title">${habit.name}</div>
+    <div style="font-size: 12px; color: var(--primary); margin-bottom: 20px; opacity: 0.8;">
+      Current Points: ${habit.currentPoints || 0}/20
+    </div>
+    
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-bottom: 20px;">
+      <button class="confirm-btn" onclick="adjustHabit('${questId}', '${habitId}', -1)" style="background: var(--warning); color: var(--text); flex: 0.5;">−</button>
+      <div style="font-size: 28px; font-weight: bold; color: var(--primary); min-width: 80px; text-align: center;">${habit.currentPoints || 0}</div>
+      <button class="confirm-btn" onclick="adjustHabit('${questId}', '${habitId}', 1)" style="background: var(--success); color: var(--background); flex: 0.5;">+</button>
+    </div>
+
+    <div style="font-size: 11px; opacity: 0.6; text-align: center; margin-bottom: 20px;">
+      Scale: ${Math.ceil(quest.timelineInDays / 20)} days = 1 point
+    </div>
+
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="confirmHabitSave('${questId}', '${habitId}')" style="background: var(--success); color: var(--background);">SAVE</button>
+      <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">CANCEL</button>
+    </div>
+  `);
+}
+
+function confirmHabitSave(questId, habitId) {
+  const quest = quests.find(q => q.id === questId);
+  const habit = quest.habits.find(h => h.id === habitId);
+  
+  showModal(`
+    <div class="modal-title">Confirm Changes?</div>
+    <div style="text-align: center; margin: 20px 0; font-size: 14px;">
+      Set ${habit.name} to ${habit.currentPoints || 0}/20 points?
+    </div>
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="saveHabitChanges('${questId}', '${habitId}')" style="background: var(--success); color: var(--background);">Yes, Confirm</button>
+      <button class="confirm-btn confirm-no" onclick="editHabit('${questId}', '${habitId}')" style="background: var(--warning);">No, Go Back</button>
+    </div>
+  `);
+}
+
+function saveHabitChanges(questId, habitId) {
+  localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+  closeModal();
+  renderQuestTabContent('habits');
+}
+
+function adjustHabit(questId, habitId, change) {
+  const quest = quests.find(q => q.id === questId);
+  const habit = quest.habits.find(h => h.id === habitId);
+  if (!habit) return;
+
+  habit.currentPoints = Math.max(0, Math.min(20, (habit.currentPoints || 0) + change));
+  editHabit(questId, habitId);
+}
+
+function editSkill(questId, skillId) {
+  const quest = quests.find(q => q.id === questId);
+  const skill = quest.skillsets.find(s => s.id === skillId);
+  if (!skill) return;
+
+  showModal(`
+    <div class="modal-title">${skill.name}</div>
+    <div style="font-size: 12px; color: var(--primary); margin-bottom: 20px; opacity: 0.8;">
+      Current Level: ${skill.currentLevel || 0}/20
+    </div>
+    
+    <div style="display: flex; gap: 12px; justify-content: center; align-items: center; margin-bottom: 20px;">
+      <button class="confirm-btn" onclick="adjustSkill('${questId}', '${skillId}', -1)" style="background: var(--warning); color: var(--text); flex: 0.5;">−</button>
+      <div style="font-size: 28px; font-weight: bold; color: var(--primary); min-width: 80px; text-align: center;">${skill.currentLevel || 0}</div>
+      <button class="confirm-btn" onclick="adjustSkill('${questId}', '${skillId}', 1)" style="background: var(--success); color: var(--background); flex: 0.5;">+</button>
+    </div>
+
+    <div style="font-size: 11px; opacity: 0.6; text-align: center; margin-bottom: 20px;">
+      Scale: ${Math.ceil(quest.timelineInDays / 20)} days = 1 level
+    </div>
+
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="confirmSkillSave('${questId}', '${skillId}')" style="background: var(--success); color: var(--background);">SAVE</button>
+      <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">CANCEL</button>
+    </div>
+  `);
+}
+
+function confirmSkillSave(questId, skillId) {
+  const quest = quests.find(q => q.id === questId);
+  const skill = quest.skillsets.find(s => s.id === skillId);
+  
+  showModal(`
+    <div class="modal-title">Confirm Changes?</div>
+    <div style="text-align: center; margin: 20px 0; font-size: 14px;">
+      Set ${skill.name} to Level ${skill.currentLevel || 0}/20?
+    </div>
+    <div class="confirm-buttons">
+      <button class="confirm-btn confirm-yes" onclick="saveSkillChanges('${questId}', '${skillId}')" style="background: var(--success); color: var(--background);">Yes, Confirm</button>
+      <button class="confirm-btn confirm-no" onclick="editSkill('${questId}', '${skillId}')" style="background: var(--warning);">No, Go Back</button>
+    </div>
+  `);
+}
+
+function saveSkillChanges(questId, skillId) {
+  localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+  closeModal();
+  renderQuestTabContent('skills');
+}
+
+function adjustSkill(questId, skillId, change) {
+  const quest = quests.find(q => q.id === questId);
+  const skill = quest.skillsets.find(s => s.id === skillId);
+  if (!skill) return;
+
+  skill.currentLevel = Math.max(0, Math.min(20, (skill.currentLevel || 0) + change));
+  editSkill(questId, skillId);
+}
   </script>
 </body>
 </html>
