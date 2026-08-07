@@ -655,8 +655,31 @@
 
       if (savedQuests) {
         quests = JSON.parse(savedQuests);
+
       }
 
+      // Fix existing quests that don't have habit/skill IDs
+      quests.forEach(function(quest) {
+        if (quest.habits) {
+          quest.habits.forEach(function(h, i) {
+            if (!h.id) { h.id = 'habit_' + i; }
+            if (h.currentPoints === undefined) { h.currentPoints = 0; }
+          });
+        }
+        if (quest.skillsets) {
+          quest.skillsets.forEach(function(s, i) {
+            if (!s.id) { s.id = 'skill_' + i; }
+            if (s.currentLevel === undefined) { s.currentLevel = 0; }
+          });
+        }
+        if (quest.dailyObjectives) {
+          quest.dailyObjectives.forEach(function(d, i) {
+            if (!d.id) { d.id = 'daily_' + i; }
+          });
+        }
+      });
+      localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+      
       document.getElementById('welcomeButton').onclick = handleWelcome;
     });
 
