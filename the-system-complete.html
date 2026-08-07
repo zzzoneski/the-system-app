@@ -779,14 +779,37 @@
       return map[level] || '0-5';
     }
 
-    function selectQuest(questId) {
-      currentQuestId = questId;
-      const quest = quests.find(q => q.id === questId);
-      document.getElementById('questScreenTitle').textContent = quest.name;
-      document.getElementById('mainScreen').classList.remove('active');
-      document.getElementById('questScreen').classList.add('active');
-      renderQuestTabContent('daily');
-    }
+   function selectQuest(questId) {
+  currentQuestId = questId;
+  const quest = quests.find(q => q.id === questId);
+  document.getElementById('questScreenTitle').textContent = quest.name;
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('questScreen').classList.add('active');
+  
+  // Check if 7-day cycle expired
+  checkRewardsCycle(questId);
+  renderQuestTabContent('daily');
+}
+
+function checkRewardsCycle(questId) {
+  const quest = quests.find(q => q.id === questId);
+  if (!quest) return;
+
+  const now = new Date();
+  const lastSetDate = quest.rewardsSet?.lastSetDate ? new Date(quest.rewardsSet.lastSetDate) : null;
+  
+  if (!lastSetDate) {
+    // First time - already shown on generation
+    return;
+  }
+
+  const daysSinceSet = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
+  
+  if (daysSinceSet >= 7) {
+    // 7 days passed - show modal again
+    setTimeout(() => showRewardsModal(questId), 300);
+  }
+}
 
     function renderQuestTabContent(tab) {
       const quest = quests.find(q => q.id === currentQuestId);
@@ -856,6 +879,25 @@
           </div>
         `).join('');
       }
+      } else if (tab === 'rewards') {
+  if (!quest.rewardsSet) {
+    tabDiv.innerHTML = '<div class="empty-state"><div class="empty-state-text">No rewards set yet. Complete an objective to set rewards!</div></div>';
+    return;
+  }
+
+  const now = new Date();
+  const lastSetDate = new Date(quest.rewardsSet.lastSetDate);
+  const daysPassed = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
+  const currentDay = Math.min(daysPassed + 1, 7);
+  
+  const rewardsList = quest.rewardsSet.text
+    .split(',')
+    .map(r => r.trim())
+    .filter(r => r.length > 0)
+    .map(r => `<div style="margin-bottom: 8px;">◆ ${r}</div>`)
+    .join('');
+
+  tabDiv.innerHTML = `
     }
 
     function completeObjective(questId, objectiveId) {
@@ -890,23 +932,16 @@ function saveRewards(questId) {
   const quest = quests.find(q => q.id === questId);
   if (!quest) return;
 
-  const weekNumber = Math.floor(quest.currentWeek || 0);
-  if (!quest.rewards) quest.rewards = {};
+  const now = new Date();
+  quest.rewardsSet = {
+    text: rewardsInput,
+    lastSetDate: now.toISOString(),
+    dayNumber: 1
+  };
   
-  quest.rewards[`week_${weekNumber}`] = rewardsInput;
   localStorage.setItem('theSystemQuests', JSON.stringify(quests));
-  
   closeModal();
-  showModal(`
-    <div class="modal-title">Congratulations! 🎉</div>
-    <div style="text-align: center; margin: 20px 0; font-size: 14px;">
-      Week ${weekNumber + 1} rewards saved!<br><br>
-      Keep pushing toward your quest!
-    </div>
-    <div class="confirm-buttons">
-      <button class="confirm-btn confirm-yes" onclick="closeModal(); switchQuestTab('daily')" style="background: var(--success); color: var(--background);">Continue</button>
-    </div>
-  `);
+  renderQuestTabContent('rewards');
 }
 
 function checkForRewardsPrompt(questId) {
@@ -1072,9 +1107,13 @@ function checkForRewardsPrompt(questId) {
         };
 
         quests.push(quest);
-        localStorage.setItem('theSystemQuests', JSON.stringify(quests));
-        closeModal();
-        backToMain();
+localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+closeModal();
+// Show rewards modal immediately after quest generation
+setTimeout(() => {
+  currentQuestId = quest.id;
+  showRewardsModal(quest.id);
+}, 500);
 
       } catch (err) {
         console.error('Quest generation error:', err);
