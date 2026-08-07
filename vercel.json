@@ -1,5 +1,9 @@
 {
   "buildCommand": "echo 'No build'",
   "outputDirectory": "./",
-  "public": false
+  "functions": {
+    "api/**/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }
