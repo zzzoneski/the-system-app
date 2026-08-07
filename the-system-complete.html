@@ -36,16 +36,6 @@
       flex-direction: column;
     }
 
-    @keyframes lightStrobe1 {
-      0%, 100% { opacity: 0.1; }
-      50% { opacity: 0.3; }
-    }
-
-    @keyframes lightStrobe2 {
-      0%, 100% { opacity: 0.2; }
-      50% { opacity: 0.4; }
-    }
-
     @keyframes fadeIn {
       from { opacity: 0; }
       to { opacity: 1; }
@@ -62,7 +52,6 @@
       }
     }
 
-    /* Welcome Screen */
     #welcomeScreen {
       display: flex;
       flex-direction: column;
@@ -73,12 +62,6 @@
       background: var(--background);
       position: relative;
       overflow: hidden;
-    }
-
-    .light-streak {
-      position: absolute;
-      opacity: 0.1;
-      pointer-events: none;
     }
 
     .welcome-content {
@@ -137,7 +120,6 @@
       box-shadow: 0 0 30px rgba(0, 212, 255, 0.8);
     }
 
-    /* Main Screens */
     .screen {
       display: none;
       flex-direction: column;
@@ -224,13 +206,6 @@
       flex-direction: column;
     }
 
-    .content-area {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-    }
-
-    /* Quest Card */
     .quest-card {
       background: var(--surface);
       border: 2px solid var(--primary);
@@ -280,7 +255,6 @@
       opacity: 1;
     }
 
-    /* Modal */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -310,19 +284,6 @@
       max-height: 85vh;
       overflow-y: auto;
       animation: scaleIn 0.35s;
-    }
-
-    .modal::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .modal::-webkit-scrollbar-track {
-      background: var(--background);
-    }
-
-    .modal::-webkit-scrollbar-thumb {
-      background: var(--primary);
-      border-radius: 4px;
     }
 
     .modal-title {
@@ -419,7 +380,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* Empty State */
     .empty-state {
       display: flex;
       flex-direction: column;
@@ -435,7 +395,6 @@
       margin-bottom: 20px;
     }
 
-    /* Embark Button */
     .embark-button {
       padding: 14px 28px;
       background: var(--primary);
@@ -456,7 +415,6 @@
       box-shadow: 0 0 25px rgba(0, 212, 255, 0.8);
     }
 
-    /* Daily Objectives */
     .daily-date {
       font-family: 'Orbitron', sans-serif;
       font-size: 14px;
@@ -511,7 +469,6 @@
       transform: scale(1.02);
     }
 
-    /* Habit/Skill Cards */
     .habit-card {
       background: var(--surface);
       border: 2px solid var(--primary);
@@ -576,40 +533,28 @@
       opacity: 1;
     }
 
-    /* Badges Tab */
-    .badges-empty {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      text-align: center;
-      opacity: 0.5;
+    .rewards-day {
+      font-size: 12px;
+      color: var(--primary);
+      margin-bottom: 12px;
+      opacity: 0.8;
     }
 
-    /* Settings Tab */
-    .settings-empty {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100%;
-      text-align: center;
-      opacity: 0.5;
+    .rewards-box {
+      background: var(--primary);
+      color: var(--background);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
     }
 
-    /* Mobile adjustments */
-    @media (max-width: 480px) {
-      .welcome-title {
-        font-size: 36px;
-      }
+    .reward-item {
+      margin-bottom: 8px;
+    }
 
-      .screen-title {
-        font-size: 18px;
-      }
-
-      .tab-button {
-        font-size: 10px;
-        padding: 10px 12px;
-      }
+    .reward-item:last-child {
+      margin-bottom: 0;
     }
   </style>
 </head>
@@ -618,7 +563,7 @@
   <div id="welcomeScreen" class="screen active">
     <div class="welcome-content">
       <div class="welcome-title">THE SYSTEM</div>
-      <div id="welcomeSubtitle" class="welcome-subtitle">Welcome back, zone</div>
+      <div id="welcomeSubtitle" class="welcome-subtitle">Welcome to</div>
       <input type="text" id="nameInput" class="welcome-name-input" placeholder="Enter your name" style="display: none;">
       <button id="welcomeButton" class="welcome-button">ENTER</button>
     </div>
@@ -647,11 +592,11 @@
     </div>
 
     <div id="badgesTab" class="tab-content">
-      <div class="badges-empty">Coming soon</div>
+      <div class="empty-state"><div class="empty-state-text">Coming soon</div></div>
     </div>
 
     <div id="settingsTab" class="tab-content">
-      <div class="settings-empty">Coming soon</div>
+      <div class="empty-state"><div class="empty-state-text">Coming soon</div></div>
     </div>
   </div>
 
@@ -689,7 +634,6 @@
     let currentQuestId = null;
     let apiKey = localStorage.getItem('theSystemApiKey') || '';
 
-    // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       const savedName = localStorage.getItem('theSystemUserName');
       const savedQuests = localStorage.getItem('theSystemQuests');
@@ -779,37 +723,33 @@
       return map[level] || '0-5';
     }
 
-   function selectQuest(questId) {
-  currentQuestId = questId;
-  const quest = quests.find(q => q.id === questId);
-  document.getElementById('questScreenTitle').textContent = quest.name;
-  document.getElementById('mainScreen').classList.remove('active');
-  document.getElementById('questScreen').classList.add('active');
-  
-  // Check if 7-day cycle expired
-  checkRewardsCycle(questId);
-  renderQuestTabContent('daily');
-}
+    function selectQuest(questId) {
+      currentQuestId = questId;
+      const quest = quests.find(q => q.id === questId);
+      document.getElementById('questScreenTitle').textContent = quest.name;
+      document.getElementById('mainScreen').classList.remove('active');
+      document.getElementById('questScreen').classList.add('active');
+      checkRewardsCycle(questId);
+      renderQuestTabContent('daily');
+    }
 
-function checkRewardsCycle(questId) {
-  const quest = quests.find(q => q.id === questId);
-  if (!quest) return;
+    function checkRewardsCycle(questId) {
+      const quest = quests.find(q => q.id === questId);
+      if (!quest) return;
 
-  const now = new Date();
-  const lastSetDate = quest.rewardsSet?.lastSetDate ? new Date(quest.rewardsSet.lastSetDate) : null;
-  
-  if (!lastSetDate) {
-    // First time - already shown on generation
-    return;
-  }
+      const now = new Date();
+      const lastSetDate = quest.rewardsSet?.lastSetDate ? new Date(quest.rewardsSet.lastSetDate) : null;
+      
+      if (!lastSetDate) {
+        return;
+      }
 
-  const daysSinceSet = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
-  
-  if (daysSinceSet >= 7) {
-    // 7 days passed - show modal again
-    setTimeout(() => showRewardsModal(questId), 300);
-  }
-}
+      const daysSinceSet = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
+      
+      if (daysSinceSet >= 7) {
+        setTimeout(() => showRewardsModal(questId), 300);
+      }
+    }
 
     function renderQuestTabContent(tab) {
       const quest = quests.find(q => q.id === currentQuestId);
@@ -873,86 +813,43 @@ function checkRewardsCycle(questId) {
           </div>
         `).join('');
       } else if (tab === 'rewards') {
-        tabDiv.innerHTML = (quest.rewards || []).map((reward, week) => `
+        if (!quest.rewardsSet) {
+          tabDiv.innerHTML = '<div class="empty-state"><div class="empty-state-text">No rewards set yet. Complete your quest to set rewards!</div></div>';
+          return;
+        }
+
+        const now = new Date();
+        const lastSetDate = new Date(quest.rewardsSet.lastSetDate);
+        const daysPassed = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
+        const currentDay = Math.min(daysPassed + 1, 7);
+        
+        const rewardsList = quest.rewardsSet.text
+          .split(',')
+          .map(r => r.trim())
+          .filter(r => r.length > 0)
+          .map(r => `<div class="reward-item">◆ ${r}</div>`)
+          .join('');
+
+        tabDiv.innerHTML = `
           <div class="habit-card">
-            <div class="habit-name">Week ${week}: ${reward}</div>
+            <div class="rewards-day">Day ${currentDay} of this rewards cycle</div>
+            <div class="rewards-box">${rewardsList}</div>
           </div>
-        `).join('');
+        `;
       }
-      } else if (tab === 'rewards') {
-  if (!quest.rewardsSet) {
-    tabDiv.innerHTML = '<div class="empty-state"><div class="empty-state-text">No rewards set yet. Complete an objective to set rewards!</div></div>';
-    return;
-  }
-
-  const now = new Date();
-  const lastSetDate = new Date(quest.rewardsSet.lastSetDate);
-  const daysPassed = Math.floor((now - lastSetDate) / (1000 * 60 * 60 * 24));
-  const currentDay = Math.min(daysPassed + 1, 7);
-  
-  const rewardsList = quest.rewardsSet.text
-    .split(',')
-    .map(r => r.trim())
-    .filter(r => r.length > 0)
-    .map(r => `<div style="margin-bottom: 8px;">◆ ${r}</div>`)
-    .join('');
-
-  tabDiv.innerHTML = `
     }
 
     function completeObjective(questId, objectiveId) {
-  closeModal();
-  showRewardsModal(questId);
-}
-
-function showRewardsModal(questId) {
-  const quest = quests.find(q => q.id === questId);
-  if (!quest) return;
-
-  showModal(`
-    <div class="modal-title">Weekly Rewards</div>
-    <div style="font-size: 13px; color: var(--primary); margin-bottom: 16px; text-transform: uppercase; font-family: 'Orbitron', sans-serif; font-weight: 700;">Insert desired rewards for the next 7 days of questing:</div>
-    
-    <textarea id="rewardsInput" class="input-field" placeholder="e.g., New gaming gear, Movie night, Rest day, Ice cream..." style="min-height: 100px;"></textarea>
-    
-    <div class="confirm-buttons" style="margin-top: 24px;">
-      <button class="confirm-btn confirm-yes" onclick="saveRewards('${questId}')" style="background: var(--success); color: var(--background);">SAVE REWARDS</button>
-      <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning); color: var(--text);">SKIP</button>
-    </div>
-  `);
-}
-
-function saveRewards(questId) {
-  const rewardsInput = document.getElementById('rewardsInput').value;
-  if (!rewardsInput.trim()) {
-    alert('Please enter at least one reward');
-    return;
-  }
-
-  const quest = quests.find(q => q.id === questId);
-  if (!quest) return;
-
-  const now = new Date();
-  quest.rewardsSet = {
-    text: rewardsInput,
-    lastSetDate: now.toISOString(),
-    dayNumber: 1
-  };
-  
-  localStorage.setItem('theSystemQuests', JSON.stringify(quests));
-  closeModal();
-  renderQuestTabContent('rewards');
-}
-
-function checkForRewardsPrompt(questId) {
-  const quest = quests.find(q => q.id === questId);
-  if (!quest) return;
-
-  const lastRewardWeek = Object.keys(quest.rewards || {}).length;
-  if (lastRewardWeek === 0) {
-    setTimeout(() => showRewardsModal(questId), 500);
-  }
-}
+      showModal(`
+        <div class="modal-title">Congratulations! 🎉</div>
+        <div style="text-align: center; margin: 20px 0; font-size: 14px;">
+          You completed today's objective!
+        </div>
+        <div class="confirm-buttons">
+          <button class="confirm-btn confirm-yes" onclick="closeModal(); switchQuestTab('daily')" style="background: var(--success); color: var(--background);">Continue</button>
+        </div>
+      `);
+    }
 
     function withdrawQuest(questId, event) {
       event.stopPropagation();
@@ -960,8 +857,8 @@ function checkForRewardsPrompt(questId) {
         <div class="modal-title">Withdraw Quest?</div>
         <div style="text-align: center; margin: 20px 0; font-size: 14px;">Are you sure you want to withdraw from this quest?</div>
         <div class="confirm-buttons">
-          <button class="confirm-btn confirm-yes" onclick="confirmWithdraw('${questId}')">Yes, Withdraw</button>
-          <button class="confirm-btn confirm-no" onclick="closeModal()">No, Stay</button>
+          <button class="confirm-btn confirm-yes" onclick="confirmWithdraw('${questId}')" style="background: var(--success); color: var(--background);">Yes, Withdraw</button>
+          <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">No, Stay</button>
         </div>
       `);
     }
@@ -1010,8 +907,8 @@ function checkForRewardsPrompt(questId) {
         </div>
 
         <div class="confirm-buttons" style="margin-top: 24px;">
-          <button class="confirm-btn confirm-yes" style="background: var(--success); color: var(--background);" onclick="generateQuest()">GENERATE QUEST</button>
-          <button class="confirm-btn confirm-no" style="background: var(--warning); color: var(--text);" onclick="closeModal()">CANCEL</button>
+          <button class="confirm-btn confirm-yes" onclick="generateQuest()" style="background: var(--success); color: var(--background);">GENERATE QUEST</button>
+          <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">CANCEL</button>
         </div>
       `);
     }
@@ -1047,7 +944,6 @@ function checkForRewardsPrompt(questId) {
       `;
 
       try {
-        // Call Vercel backend proxy
         const vercelEndpoint = 'https://the-system-app-beta11.vercel.app/api/generateQuest';
         
         const response = await fetch(vercelEndpoint, {
@@ -1079,7 +975,6 @@ function checkForRewardsPrompt(questId) {
 
         const breakdown = JSON.parse(content);
 
-        // Create quest
         const timelineMatch = timeline.match(/(\d+)\s*(day|week|month|year)/i);
         let timelineInDays = 84;
         if (timelineMatch) {
@@ -1103,17 +998,15 @@ function checkForRewardsPrompt(questId) {
           milestones: breakdown.milestones || [],
           affirmation: breakdown.affirmation || '',
           quote: breakdown.quote || '',
-          rewards: {}
+          rewardsSet: null
         };
 
         quests.push(quest);
-localStorage.setItem('theSystemQuests', JSON.stringify(quests));
-closeModal();
-// Show rewards modal immediately after quest generation
-setTimeout(() => {
-  currentQuestId = quest.id;
-  showRewardsModal(quest.id);
-}, 500);
+        localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+        closeModal();
+        
+        currentQuestId = quest.id;
+        setTimeout(() => showRewardsModal(quest.id), 300);
 
       } catch (err) {
         console.error('Quest generation error:', err);
@@ -1122,20 +1015,51 @@ setTimeout(() => {
           <div style="color: var(--warning); margin-bottom: 16px; font-size: 12px; line-height: 1.5; word-break: break-word;">
             <strong>Error: ${err.message}</strong>
             <br><br>
-            <strong>Setup Checklist:</strong>
-            <br>✓ Update the Vercel URL in the HTML (line ~1144)
-            <br>✓ Go to <a href="https://build.nvidia.com" target="_blank" style="color: var(--primary); text-decoration: underline;">build.nvidia.com</a>
-            <br>✓ Sign up (free, no credit card)
-            <br>✓ Get your API key
-            <br>✓ Copy the ENTIRE key (no spaces)
-            <br>✓ Try again
+            Make sure your NVIDIA API key is correct and you have internet connection.
           </div>
           <div class="confirm-buttons">
-            <button class="confirm-btn confirm-yes" onclick="showEmbarkModal()">Try Again</button>
-            <button class="confirm-btn confirm-no" onclick="closeModal()">Cancel</button>
+            <button class="confirm-btn confirm-yes" onclick="showEmbarkModal()" style="background: var(--success); color: var(--background);">Try Again</button>
+            <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">Cancel</button>
           </div>
         `;
       }
+    }
+
+    function showRewardsModal(questId) {
+      const quest = quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      showModal(`
+        <div class="modal-title">Weekly Rewards</div>
+        <div style="font-size: 13px; color: var(--primary); margin-bottom: 16px; text-transform: uppercase; font-family: 'Orbitron', sans-serif; font-weight: 700;">Insert desired rewards for the next 7 days of questing:</div>
+        
+        <textarea id="rewardsInput" class="input-field" placeholder="e.g., New gaming gear, Movie night, Rest day, Ice cream..." style="min-height: 100px;"></textarea>
+        
+        <div class="confirm-buttons" style="margin-top: 24px;">
+          <button class="confirm-btn confirm-yes" onclick="saveRewards('${questId}')" style="background: var(--success); color: var(--background);">SAVE REWARDS</button>
+          <button class="confirm-btn confirm-no" onclick="closeModal()" style="background: var(--warning);">SKIP</button>
+        </div>
+      `);
+    }
+
+    function saveRewards(questId) {
+      const rewardsInput = document.getElementById('rewardsInput').value;
+      if (!rewardsInput.trim()) {
+        alert('Please enter at least one reward');
+        return;
+      }
+
+      const quest = quests.find(q => q.id === questId);
+      if (!quest) return;
+
+      quest.rewardsSet = {
+        text: rewardsInput,
+        lastSetDate: new Date().toISOString()
+      };
+      
+      localStorage.setItem('theSystemQuests', JSON.stringify(quests));
+      closeModal();
+      backToMain();
     }
 
     function showModal(content) {
@@ -1149,12 +1073,10 @@ setTimeout(() => {
     }
 
     function editHabit(questId, habitId) {
-      // Placeholder for edit functionality
       alert('Edit functionality coming soon');
     }
 
     function editSkill(questId, skillId) {
-      // Placeholder for edit functionality
       alert('Edit functionality coming soon');
     }
   </script>
